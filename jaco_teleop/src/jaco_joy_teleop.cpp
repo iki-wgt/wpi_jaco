@@ -27,11 +27,7 @@ jaco_joy_teleop::jaco_joy_teleop()
   private_nh.param<double>("angular_throttle_factor", angular_throttle_factor, 1.0);
   private_nh.param<double>("finger_throttle_factor", finger_throttle_factor, 1.0);
   string str;
-  private_nh.param<string>("controller_type", str, "digital");
-  if (str.compare("digital") == 0)
-    controllerType = DIGITAL;
-  else
-    controllerType = ANALOG;
+
 
   //initialize everything
   stopMessageSentArm = true;
@@ -51,32 +47,8 @@ jaco_joy_teleop::jaco_joy_teleop()
 
   ROS_INFO("JACO joystick teleop started");
 
-  puts(" ----------------------------------------");
-  puts("| Jaco Joystick Teleop Help              |");
-  puts("|----------------------------------------|*");
-  puts("| Current Mode: Arm Control              |*");
-  puts("|----------------------------------------|*");
-  puts("| For help and controls, press:          |*");
-  puts("|                          _             |*");
-  puts("|                        _| |_           |*");
-  puts("|  show finger controls |_   _|          |*");
-  puts("|                         |_|            |*");
-  puts("|                  show arm controls     |*");
-  puts("|                                        |*");
-  puts(" ----------------------------------------**");
-  puts("  *****************************************");
 
-  if (controllerType == ANALOG)
-  {
-    initLeftTrigger = false;
-    initRightTrigger = false;
-    calibrated = false;
-
-    ROS_INFO(
-        "You specified a controller with analog triggers. This requires calibration before any teleoperation can begin.  Please press and release both triggers before continuing.");
-  }
-  else
-    calibrated = true;
+  calibrated = true;
 }
 
 void jaco_joy_teleop::joy_cback(const sensor_msgs::Joy::ConstPtr& joy)
@@ -100,152 +72,40 @@ void jaco_joy_teleop::joy_cback(const sensor_msgs::Joy::ConstPtr& joy)
   }
 
   //software emergency stop
-  if (controllerType == DIGITAL)
-  {
-    if (joy->buttons.at(8) == 1)
-      EStopEnabled = true;
-    else if (joy->buttons.at(9) == 1)
-      EStopEnabled = false;
-  }
-  else
-  {
-    if (joy->buttons.at(6) == 1)
-      EStopEnabled = true;
-    else if (joy->buttons.at(7) == 1)
-      EStopEnabled = false;
-  }
 
-  //help menu
-  if ((controllerType == DIGITAL && joy->axes.at(5) == -1.0) || (controllerType == ANALOG && joy->axes.at(7) == -1.0))
-  {
-    if (!helpDisplayed)
-    {
-      helpDisplayed = true;
-      puts(" ----------------------------------------");
-      puts("| Jaco Joystick Teleop Help              |");
-      puts("|----------------------------------------|*");
-      if (mode == ARM_CONTROL)
-        puts("| Current Mode: Arm Control              |*");
-      else
-        puts("| Current Mode: Finger Control           |*");
-      puts("|----------------------------------------|*");
-      puts("|                Controls                |*");
-      puts("|   roll/down                 roll/up    |*");
-      puts("|    ________                ________    |*");
-      puts("|   /    _   \\______________/        \\   |*");
-      puts("|  |   _| |_    < >    < >     (4)    |  |*");
-      puts("|  |  |_   _|  Estop  start (1)   (3) |  |*");
-      puts("|  |    |_|    ___      ___    (2)    |  |*");
-      puts("|  |          /   \\    /   \\          |  |*");
-      puts("|  |          \\___/    \\___/          |  |*");
-      puts("|  |       x/y trans  pitch/yaw       |  |*");
-      puts("|  |        _______/--\\_______        |  |*");
-      puts("|  |       |                  |       |  |*");
-      puts("|   \\     /                    \\     /   |*");
-      puts("|    \\___/                      \\___/    |*");
-      puts("|                                        |*");
-      puts("| Buttons:                               |*");
-      puts("|   (1) Switch to finger control mode    |*");
-      puts("|   (2) Switch to arm control mode       |*");
-      puts("|   (3) No function                      |*");
-      puts("|   (4) No function                      |*");
-      puts(" ----------------------------------------**");
-      puts("  *****************************************");
-    }
-  }
-  else if ((controllerType == DIGITAL && joy->axes.at(4) == 1.0)
-      || (controllerType == ANALOG && joy->axes.at(6) == 1.0))
-  {
-    if (!helpDisplayed)
-    {
-      helpDisplayed = true;
-      puts(" ----------------------------------------");
-      puts("| Jaco Joystick Teleop Help              |");
-      puts("|----------------------------------------|*");
-      if (mode == ARM_CONTROL)
-        puts("| Current Mode: Arm Control              |*");
-      else
-        puts("| Current Mode: Finger Control           |*");
-      puts("|----------------------------------------|*");
-      puts("|                Controls                |*");
-      puts("| finger1 open/close  finger2 open/close |*");
-      puts("|    ________                ________    |*");
-      puts("|   /    _   \\______________/        \\   |*");
-      puts("|  |   _| |_    < >    < >     (4)    |  |*");
-      puts("|  |  |_   _|  Estop  start (1)   (3) |  |*");
-      puts("|  |    |_|    ___      ___    (2)    |  |*");
-      puts("|  |          /   \\    /   \\          |  |*");
-      puts("|  |          \\___/    \\___/          |  |*");
-      puts("|  | hand open/close  thumb open/close|  |*");
-      puts("|  |        _______/--\\_______        |  |*");
-      puts("|  |       |                  |       |  |*");
-      puts("|   \\     /                    \\     /   |*");
-      puts("|    \\___/                      \\___/    |*");
-      puts("|                                        |*");
-      puts("| Buttons:                               |*");
-      puts("|   (1) Switch to finger control mode    |*");
-      puts("|   (2) Switch to arm control mode       |*");
-      puts("|   (3) No function                      |*");
-      puts("|   (4) No function                      |*");
-      puts(" ----------------------------------------**");
-      puts("  *****************************************");
-    }
-  }
-  else
-    helpDisplayed = false;
+  if (joy->buttons.at(8) == 1)
+    EStopEnabled = true;
+  else if (joy->buttons.at(9) == 1)
+    EStopEnabled = false;
+
 
   int buttonIndex;
 
   switch (mode)
   {
     case ARM_CONTROL:
-      // left joystick controls the linear x and y movement
-      cartesianCmd.arm.linear.x = joy->axes.at(0) * MAX_TRANS_VEL * linear_throttle_factor;
-      cartesianCmd.arm.linear.y = -joy->axes.at(1) * MAX_TRANS_VEL * linear_throttle_factor;
+      //careful these settings are for a jaco arm mounted upside down!!!
 
-      //triggers control the linear z movement
-      if (controllerType == DIGITAL)
-      {
-        if (joy->buttons.at(7) == 1)
-          cartesianCmd.arm.linear.z = MAX_TRANS_VEL * linear_throttle_factor;
-        else if (joy->buttons.at(6) == 1)
-          cartesianCmd.arm.linear.z = -MAX_TRANS_VEL * linear_throttle_factor;
-        else
-          cartesianCmd.arm.linear.z = 0.0;
-      }
-      else
-      {
-        if (joy->axes.at(5) < 1.0)
-          cartesianCmd.arm.linear.z = (0.5 - joy->axes.at(5) / 2.0) * MAX_ANG_VEL * angular_throttle_factor;
-        else
-          cartesianCmd.arm.linear.z = -(0.5 - joy->axes.at(2) / 2.0) * MAX_ANG_VEL * angular_throttle_factor;
-      }
+      // left joystick controls the cartesian movement in world space
+      cartesianCmd.arm.linear.x = -joy->axes.at(1) * MAX_TRANS_VEL * linear_throttle_factor;
+      cartesianCmd.arm.linear.y = -joy->axes.at(0) * MAX_TRANS_VEL * linear_throttle_factor;
+      cartesianCmd.arm.linear.z = -joy->axes.at(2) * MAX_TRANS_VEL * linear_throttle_factor;
 
-      //bumpers control roll
-      if (joy->buttons.at(5) == 1)
-        cartesianCmd.arm.angular.z = MAX_ANG_VEL * angular_throttle_factor;
-      else if (joy->buttons.at(4) == 1)
-        cartesianCmd.arm.angular.z = -MAX_ANG_VEL * angular_throttle_factor;
-      else
-        cartesianCmd.arm.angular.z = 0.0;
 
-      //right joystick controls pitch and yaw
-      if (controllerType == DIGITAL)
-      {
-        cartesianCmd.arm.angular.x = -joy->axes.at(3) * MAX_ANG_VEL * angular_throttle_factor;
-        cartesianCmd.arm.angular.y = joy->axes.at(2) * MAX_ANG_VEL * angular_throttle_factor;
-      }
-      else
-      {
-        cartesianCmd.arm.angular.x = -joy->axes.at(4) * MAX_ANG_VEL * angular_throttle_factor;
-        cartesianCmd.arm.angular.y = joy->axes.at(3) * MAX_ANG_VEL * angular_throttle_factor;
-      }
+      //right joystick controls roll pitch yaw in gripper coordinate system with x pointing 
+      //into finger direction, z pointing up (ignore angular.x,y,z)
+      //pitch
+      cartesianCmd.arm.angular.x = joy->axes.at(4) * MAX_ANG_VEL * angular_throttle_factor;
+      //yaw
+      cartesianCmd.arm.angular.y = joy->axes.at(5) * MAX_ANG_VEL * angular_throttle_factor;
+      //roll
+      cartesianCmd.arm.angular.z = joy->axes.at(3) * MAX_ANG_VEL * angular_throttle_factor;
+
 
       //mode switching
-      if (controllerType == DIGITAL)
-        buttonIndex = 0;
-      else
-        buttonIndex = 2;
+
+      buttonIndex = 0;
+
 
       if (joy->buttons.at(buttonIndex) == 1)
       {
@@ -263,64 +123,28 @@ void jaco_joy_teleop::joy_cback(const sensor_msgs::Joy::ConstPtr& joy)
       }
       break;
     case FINGER_CONTROL:
-      if (joy->axes.at(1) == 0.0)
-      {
-        //individual finger control
-        //thumb controlled by right thumbstick
-        if (controllerType == DIGITAL)
-          fingerCmd.fingers[0] = -joy->axes.at(3) * MAX_FINGER_VEL * finger_throttle_factor;
-        else
-          fingerCmd.fingers[0] = -joy->axes.at(4) * MAX_FINGER_VEL * finger_throttle_factor;
 
-        //top finger controlled by left triggers
-        if (controllerType == DIGITAL)
-        {
-          if (joy->buttons.at(4) == 1)
-            fingerCmd.fingers[1] = -MAX_FINGER_VEL * finger_throttle_factor;
-          else if (joy->buttons.at(6) == 1)
-            fingerCmd.fingers[1] = MAX_FINGER_VEL * finger_throttle_factor;
-          else
-            fingerCmd.fingers[1] = 0.0;
-        }
-        else
-        {
-          if (joy->buttons.at(4) == 1)
-            fingerCmd.fingers[1] = -MAX_FINGER_VEL * finger_throttle_factor;
-          else
-            fingerCmd.fingers[1] = (0.5 - joy->axes.at(2) / 2.0) * MAX_FINGER_VEL * finger_throttle_factor;
-        }
+      //individual finger control
 
-        //bottom finger controlled by right bumpers
-        if (controllerType == DIGITAL)
-        {
-          if (joy->buttons.at(5) == 1)
-            fingerCmd.fingers[2] = -MAX_FINGER_VEL * finger_throttle_factor;
-          else if (joy->buttons.at(7) == 1)
-            fingerCmd.fingers[2] = MAX_FINGER_VEL * finger_throttle_factor;
-          else
-            fingerCmd.fingers[2] = 0.0;
-        }
-        else
-        {
-          if (joy->buttons.at(5) == 1)
-            fingerCmd.fingers[2] = -MAX_FINGER_VEL * finger_throttle_factor;
-          else
-            fingerCmd.fingers[2] = (0.5 - joy->axes.at(5) / 2.0) * MAX_FINGER_VEL * finger_throttle_factor;
-        }
-      }
-      else
-      {
-        //control full gripper (outprioritizes individual finger control)
-        fingerCmd.fingers[0] = -joy->axes.at(1) * MAX_FINGER_VEL * finger_throttle_factor;
-        fingerCmd.fingers[1] = fingerCmd.fingers[0];
-        fingerCmd.fingers[2] = fingerCmd.fingers[0];
-      }
+      //thumb controlled
+
+      //fingerCmd.fingers[0] = -joy->axes.at(4) * MAX_FINGER_VEL * finger_throttle_factor;
+
+      //top finger
+
+
+      //bottom finger controlled
+
+
+      //control full gripper (outprioritizes individual finger control)
+      fingerCmd.fingers[0] = -joy->axes.at(1) * MAX_FINGER_VEL * finger_throttle_factor;
+      fingerCmd.fingers[1] = fingerCmd.fingers[0];
+      fingerCmd.fingers[2] = fingerCmd.fingers[0];
+  
 
       //mode switching
-      if (controllerType == DIGITAL)
-        buttonIndex = 1;
-      else
-        buttonIndex = 0;
+      buttonIndex = 1;
+
 
       if (joy->buttons.at(buttonIndex) == 1)
       {
