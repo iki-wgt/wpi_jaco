@@ -15,6 +15,8 @@
 
 	<xacro:include filename="$(find jaco_description)/urdf/jaco_arm.urdf.xacro" />
 
+	<xacro:property name="M_PI" value="3.1415926535897931" />
+
 	<link name="root">
 		<visual>
 			<origin xyz="0 0 0" rpy="0 0 0" />
@@ -29,6 +31,32 @@
 			</geometry>
 		</collision>
 	</link>
+
+	 <joint name="jaco_gripper_tool_frame_joint" type="fixed">
+        <parent link="jaco_link_hand"/>
+        <child link="jaco_gripper_tool_frame"/>
+        <origin rpy="${-M_PI/2} ${M_PI/2} 0" xyz="0 0 -0.1"/>
+    </joint>
+    <link name="jaco_gripper_tool_frame">
+        <!-- This is the coordinate system of the tool (this is the position
+         used in IK etc., relative to the base frame); there is no actual
+         arm part attached to this link -->
+        <!-- The visual and collision are a workaround for a bug when a object is
+     attached to a link without collision geometry the object's collisions are ignored-->
+        <!--<visual>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <geometry>
+                <box size="0.001 0.001 0.001"/>
+            </geometry>
+            <material name="black"/>
+        </visual>
+        <collision>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <geometry>
+                <box size="0.001 0.001 0.001"/>
+            </geometry>
+        </collision>-->
+    </link>
 
 	<xacro:jaco_arm parent="root" xyz="0 0 0" rpy="0 0 0" />
 </robot>
