@@ -63,6 +63,10 @@ JacoArmTrajectoryController::JacoArmTrajectoryController(ros::NodeHandle nh, ros
   qe_client = nh.serviceClient<wpi_jaco_msgs::QuaternionToEuler>("jaco_conversions/quaternion_to_euler");
   cartesianPositionServer = nh.advertiseService("jaco_arm/get_cartesian_position",
                                                 &JacoArmTrajectoryController::getCartesianPosition, this);
+  startApiControlServer = nh.advertiseService("jaco_arm/start_api_control",
+                                                &JacoArmTrajectoryController::startApiControl, this);
+  stopApiControlServer = nh.advertiseService("jaco_arm/stop_api_control",
+                                                &JacoArmTrajectoryController::stopApiControl, this);
 
   // Action servers
   trajectory_server_.start();
@@ -448,7 +452,7 @@ void JacoArmTrajectoryController::execute_smooth_trajectory(const control_msgs::
     trajectory_size = Trajectory_Info.TrajectoryCount;
 
     //ROS_INFO("%f, %f, %f, %f, %f, %f", joint_pos[0], joint_pos[1], joint_pos[2], joint_pos[3], joint_pos[4], joint_pos[5]);
-    //ROS_INFO("Trajectory points complete: %d; remaining: %d", initialTrajectorySize - trajectory_size, trajectory_size);
+    ROS_DEBUG("Trajectory points complete: %d; remaining: %d", initialTrajectorySize - trajectory_size, trajectory_size);
     rate.sleep();
   }
   ROS_INFO("Trajectory Control Complete.");
@@ -1002,6 +1006,39 @@ bool JacoArmTrajectoryController::getCartesianPosition(wpi_jaco_msgs::GetCartesi
 
   return true;
 }
+
+
+bool JacoArmTrajectoryController::startApiControl(std_srvs::Empty::Request& request, 
+                                                  std_srvs::Empty::Response& response)
+{
+
+  {
+    boost::recursive_mutex::scoped_lock lock(api_mutex);
+    ROS_INFO("StartApiControl result %d", StartControlAPI());
+    ROS_INFO("SetCartesianControl result %d", SetCartesianControl());
+  }
+
+  return true;
+}
+
+//TODO stopping of api and eraseing trajectories doesnt seem to work
+bool JacoArmTrajectoryController::stopApiControl(std_srvs::Empty::Request& request, 
+                                                 std_srvs::Empty::Response& response)
+{
+
+  {
+    boost::recursive_mutex::scoped_lock lock(api_mutex);
+    SetCartesianControl();
+    controlType == CARTESIAN_CONTROL;
+    EraseAllTrajectories();
+    ROS_INFO("StopControlAPI result %d", StopControlAPI());
+    //ROS_INFO("CloseAPI result %d", CloseAPI());
+    
+  }
+
+  return true;
+}
+
 }
 
 int main(int argc, char** argv)
