@@ -39,6 +39,9 @@
 #define SMALL_ACTUATOR_VELOCITY 1.0472 //maximum velocity of small actuator (joints 4-6) (rad/s)
 #define TIME_SCALING_FACTOR 1.5 //keep the trajectory at a followable speed
 
+#define GRIPPER_CLOSED 0.7
+#define GRIPPER_OPEN 0
+
 #define DEG_TO_RAD (M_PI/180)
 #define RAD_TO_DEG (180/M_PI)
 

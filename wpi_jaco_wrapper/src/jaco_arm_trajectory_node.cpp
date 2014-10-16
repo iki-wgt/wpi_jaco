@@ -666,10 +666,22 @@ void JacoArmTrajectoryController::execute_gripper(const control_msgs::GripperCom
 
   angularCmdPublisher.publish(cmd);
 
-  ros::Rate rate(10);
-  int trajectory_size = 1;
-  while (trajectory_size > 0)
+  
+  //determine if the gripper is supposed to be opened or closed
+  bool opening = false;
+  if(joint_pos[6] > goal->command.position){
+      opening = true;
+      ROS_DEBUG("Opening gripper");
+  }else{
+      opening = false;
+      ROS_DEBUG("Closing gripper");
+  }
+
+  ros::Rate rate(100);
+
+  while (true)
   {
+     ROS_DEBUG("waiting for gripper");
     //check for preempt requests from clients
     if (gripper_server_.isPreemptRequested() || !ros::ok())
     {
@@ -683,18 +695,28 @@ void JacoArmTrajectoryController::execute_gripper(const control_msgs::GripperCom
       //preempt action server
       ROS_INFO("Gripper action server preempted by client");
       gripper_server_.setPreempted();
-
       return;
     }
 
-    TrajectoryFIFO Trajectory_Info;
-    memset(&Trajectory_Info, 0, sizeof(Trajectory_Info));
-    {
-      boost::recursive_mutex::scoped_lock lock(api_mutex);
-      GetGlobalTrajectoryInfo(Trajectory_Info);
+    if(opening && joint_pos[6] <= goal->command.position){     
+      break;
     }
-    trajectory_size = Trajectory_Info.TrajectoryCount;
+
+    if(!opening && joint_pos[6] >= goal->command.position){     
+      break;
+    }
+
+    if(joint_eff[6] >= goal->command.max_effort){
+      break;
+    }
+
     rate.sleep();
+  }
+
+  if(opening){
+    ROS_DEBUG("Gripper opened");
+  }else{
+    ROS_DEBUG("Gripper closed");
   }
 
   //stop gripper control
