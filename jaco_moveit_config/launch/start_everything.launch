@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <launch>
 
-	<include file="$(find wpi_jaco_wrapper)/launch/arm.launch"/>
 	<include file="$(find jaco_description)/launch/jaco_description.launch"/>
+	<include file="$(find wpi_jaco_wrapper)/launch/arm.launch"/>
 	<include file="$(find jaco_moveit_config)/launch/bringup_moveit_planning_execution.launch"/>
 	<include file="$(find jaco_teleop)/launch/joystick_teleop.launch"/>
 	<include file="$(find joystick_remapper)/launch/start.launch"/>
