@@ -17,7 +17,7 @@
 
 	<xacro:property name="M_PI" value="3.1415926535897931" />
 
-	<link name="root">
+	<link name="jaco_base_link">
 		<visual>
 			<origin xyz="0 0 0" rpy="0 0 0" />
 			<geometry>
@@ -58,5 +58,5 @@
         </collision>-->
     </link>
 
-	<xacro:jaco_arm parent="root" xyz="0 0 0" rpy="0 0 0" />
+	<xacro:jaco_arm parent="jaco_base_link" xyz="0 0 0" rpy="0 0 0" />
 </robot>

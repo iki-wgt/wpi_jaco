@@ -68,6 +68,10 @@ JacoArmTrajectoryController::JacoArmTrajectoryController(ros::NodeHandle nh, ros
   qe_client = nh.serviceClient<wpi_jaco_msgs::QuaternionToEuler>("jaco_conversions/quaternion_to_euler");
   cartesianPositionServer = nh.advertiseService("jaco_arm/get_cartesian_position",
                                                 &JacoArmTrajectoryController::getCartesianPosition, this);
+  startApiControlServer = nh.advertiseService("jaco_arm/start_api_control",
+                                                &JacoArmTrajectoryController::startApiControl, this);
+  stopApiControlServer = nh.advertiseService("jaco_arm/stop_api_control",
+                                                &JacoArmTrajectoryController::stopApiControl, this);
 
   // Action servers
   trajectory_server_.start();
@@ -453,7 +457,7 @@ void JacoArmTrajectoryController::execute_smooth_trajectory(const control_msgs::
     trajectory_size = Trajectory_Info.TrajectoryCount;
 
     //ROS_INFO("%f, %f, %f, %f, %f, %f", joint_pos[0], joint_pos[1], joint_pos[2], joint_pos[3], joint_pos[4], joint_pos[5]);
-    //ROS_INFO("Trajectory points complete: %d; remaining: %d", initialTrajectorySize - trajectory_size, trajectory_size);
+    ROS_DEBUG("Trajectory points complete: %d; remaining: %d", initialTrajectorySize - trajectory_size, trajectory_size);
     rate.sleep();
   }
   ROS_INFO("Trajectory Control Complete.");
@@ -666,10 +670,22 @@ void JacoArmTrajectoryController::execute_gripper(const control_msgs::GripperCom
 
   angularCmdPublisher.publish(cmd);
 
-  ros::Rate rate(10);
-  int trajectory_size = 1;
-  while (trajectory_size > 0)
+  
+  //determine if the gripper is supposed to be opened or closed
+  bool opening = false;
+  if(joint_pos[6] > goal->command.position){
+      opening = true;
+      ROS_DEBUG("Opening gripper");
+  }else{
+      opening = false;
+      ROS_DEBUG("Closing gripper");
+  }
+
+  ros::Rate rate(100);
+
+  while (true)
   {
+     ROS_DEBUG("waiting for gripper");
     //check for preempt requests from clients
     if (gripper_server_.isPreemptRequested() || !ros::ok())
     {
@@ -683,18 +699,28 @@ void JacoArmTrajectoryController::execute_gripper(const control_msgs::GripperCom
       //preempt action server
       ROS_INFO("Gripper action server preempted by client");
       gripper_server_.setPreempted();
-
       return;
     }
 
-    TrajectoryFIFO Trajectory_Info;
-    memset(&Trajectory_Info, 0, sizeof(Trajectory_Info));
-    {
-      boost::recursive_mutex::scoped_lock lock(api_mutex);
-      GetGlobalTrajectoryInfo(Trajectory_Info);
+    if(opening && joint_pos[6] <= goal->command.position){     
+      break;
     }
-    trajectory_size = Trajectory_Info.TrajectoryCount;
+
+    if(!opening && joint_pos[6] >= goal->command.position){     
+      break;
+    }
+
+    if(joint_eff[6] >= goal->command.max_effort){
+      break;
+    }
+
     rate.sleep();
+  }
+
+  if(opening){
+    ROS_DEBUG("Gripper opened");
+  }else{
+    ROS_DEBUG("Gripper closed");
   }
 
   //stop gripper control
@@ -1006,6 +1032,39 @@ bool JacoArmTrajectoryController::getCartesianPosition(wpi_jaco_msgs::GetCartesi
 
   return true;
 }
+
+
+bool JacoArmTrajectoryController::startApiControl(std_srvs::Empty::Request& request, 
+                                                  std_srvs::Empty::Response& response)
+{
+
+  {
+    boost::recursive_mutex::scoped_lock lock(api_mutex);
+    ROS_INFO("StartApiControl result %d", StartControlAPI());
+    ROS_INFO("SetCartesianControl result %d", SetCartesianControl());
+  }
+
+  return true;
+}
+
+//TODO stopping of api and eraseing trajectories doesnt seem to work
+bool JacoArmTrajectoryController::stopApiControl(std_srvs::Empty::Request& request, 
+                                                 std_srvs::Empty::Response& response)
+{
+
+  {
+    boost::recursive_mutex::scoped_lock lock(api_mutex);
+    SetCartesianControl();
+    controlType == CARTESIAN_CONTROL;
+    EraseAllTrajectories();
+    ROS_INFO("StopControlAPI result %d", StopControlAPI());
+    //ROS_INFO("CloseAPI result %d", CloseAPI());
+    
+  }
+
+  return true;
+}
+
 }
 
 int main(int argc, char** argv)

@@ -26,6 +26,7 @@
 #include <wpi_jaco_msgs/HomeArmAction.h>
 #include <wpi_jaco_msgs/JacoFK.h>
 #include <wpi_jaco_msgs/QuaternionToEuler.h>
+#include <std_srvs/Empty.h>
 #include <sensor_msgs/JointState.h>
 
 #include <jaco_sdk/Kinova.API.UsbCommandLayerUbuntu.h>
@@ -37,6 +38,9 @@
 #define LARGE_ACTUATOR_VELOCITY 0.8378 //maximum velocity of large actuator (joints 1-3) (rad/s)
 #define SMALL_ACTUATOR_VELOCITY 1.0472 //maximum velocity of small actuator (joints 4-6) (rad/s)
 #define TIME_SCALING_FACTOR 1.5 //keep the trajectory at a followable speed
+
+#define GRIPPER_CLOSED 0.7
+#define GRIPPER_OPEN 0
 
 #define DEG_TO_RAD (M_PI/180)
 #define RAD_TO_DEG (180/M_PI)
@@ -74,6 +78,9 @@ private:
   ros::ServiceClient jaco_fk_client; //!< forward kinematics client
   ros::ServiceClient qe_client; //!< quaternion to euler (XYZ) conversion client
   ros::ServiceServer cartesianPositionServer; //!< service server to get end effector pose
+  ros::ServiceServer startApiControlServer; //!< start api control
+  ros::ServiceServer stopApiControlServer; //!< stop api control
+
 
   ros::Timer joint_state_timer_; //!< timer for joint state publisher
 
@@ -197,6 +204,26 @@ private:
    */
   bool getCartesianPosition(wpi_jaco_msgs::GetCartesianPosition::Request &req,
                             wpi_jaco_msgs::GetCartesianPosition::Response &res);
+
+   /**
+   * \brief Start the API control to control the arm after API control was lost
+   * because the joystick was used or stopAPIControlw as called
+   *
+   * @return true on success
+   */
+  bool startApiControl(std_srvs::Empty::Request& request, 
+                                                  std_srvs::Empty::Response& response);
+
+
+   /**
+   * \brief Stop the API control as e-stop for the arm. Do move the arm again startApiControl
+   * has to be called.
+   *
+   * @return true on success
+   */
+  bool stopApiControl(std_srvs::Empty::Request& request, 
+                                                  std_srvs::Empty::Response& response);
+
 };
 
 }
