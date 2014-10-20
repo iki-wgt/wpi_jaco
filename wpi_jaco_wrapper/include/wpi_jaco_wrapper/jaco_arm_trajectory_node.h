@@ -35,9 +35,15 @@
 #define NUM_JACO_FINGER_JOINTS 3
 #define NUM_JOINTS (NUM_JACO_JOINTS+NUM_JACO_FINGER_JOINTS)
 
+/*
 #define LARGE_ACTUATOR_VELOCITY 0.8378 //maximum velocity of large actuator (joints 1-3) (rad/s)
 #define SMALL_ACTUATOR_VELOCITY 1.0472 //maximum velocity of small actuator (joints 4-6) (rad/s)
 #define TIME_SCALING_FACTOR 1.5 //keep the trajectory at a followable speed
+*/
+
+#define LARGE_ACTUATOR_VELOCITY 0.5 //maximum velocity of large actuator (joints 1-3) (rad/s)
+#define SMALL_ACTUATOR_VELOCITY 1 //maximum velocity of small actuator (joints 4-6) (rad/s)
+#define TIME_SCALING_FACTOR 3 //keep the trajectory at a followable speed
 
 #define GRIPPER_CLOSED 0.7
 #define GRIPPER_OPEN 0
