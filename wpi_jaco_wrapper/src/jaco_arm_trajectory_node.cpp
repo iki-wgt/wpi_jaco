@@ -470,6 +470,9 @@ void JacoArmTrajectoryController::execute_joint_trajectory(const control_msgs::F
 {
   float trajectoryPoints[NUM_JACO_JOINTS][goal->trajectory.points.size()];
   int numPoints = goal->trajectory.points.size();
+  int numberOfJoints = goal->trajectory.points.at(0).positions.size();
+
+  ROS_INFO("Number of Joints:  %d", numberOfJoints);
 
   //get trajectory data
   for (unsigned int i = 0; i < numPoints; i++)
@@ -659,25 +662,29 @@ void JacoArmTrajectoryController::execute_joint_trajectory(const control_msgs::F
 void JacoArmTrajectoryController::execute_gripper(const control_msgs::GripperCommandGoalConstPtr &goal)
 {
   wpi_jaco_msgs::AngularCommand cmd;
-  cmd.position = true;
+  cmd.position = false;
   cmd.armCommand = false;
   cmd.fingerCommand = true;
-  cmd.repeat = false;
+  cmd.repeat = true;
   cmd.fingers.resize(3);
-  cmd.fingers[0] = goal->command.position;
-  cmd.fingers[1] = goal->command.position;
-  cmd.fingers[2] = goal->command.position;
 
-  angularCmdPublisher.publish(cmd);
+  double speed = 25;
+  
 
   
   //determine if the gripper is supposed to be opened or closed
   bool opening = false;
   if(joint_pos[6] > goal->command.position){
       opening = true;
+      cmd.fingers[0] = -speed;
+      cmd.fingers[1] = -speed;
+      cmd.fingers[2] = -speed;
       ROS_DEBUG("Opening gripper");
   }else{
       opening = false;
+      cmd.fingers[0] = speed;
+      cmd.fingers[1] = speed;
+      cmd.fingers[2] = speed;
       ROS_DEBUG("Closing gripper");
   }
 
@@ -686,6 +693,7 @@ void JacoArmTrajectoryController::execute_gripper(const control_msgs::GripperCom
   while (true)
   {
      ROS_DEBUG("waiting for gripper");
+     angularCmdPublisher.publish(cmd);
     //check for preempt requests from clients
     if (gripper_server_.isPreemptRequested() || !ros::ok())
     {
